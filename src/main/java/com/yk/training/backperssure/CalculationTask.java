@@ -26,7 +26,7 @@ public class CalculationTask {
         final long start = System.currentTimeMillis();
         final long waitTimeMs = MIN_WAIT_TIME_MS + RANDOM.nextInt(MAX_WAIT_TIME_MS);
         sleep(waitTimeMs);
-        final int result = Math.abs(RANDOM.nextInt());
+        final int result = Math.abs(RANDOM.nextInt()) % 100;
         final String text = "This is result: " + result;
         final long end = System.currentTimeMillis();
         final long total = end - start;

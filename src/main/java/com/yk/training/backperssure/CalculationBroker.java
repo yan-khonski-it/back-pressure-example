@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -72,10 +72,11 @@ public class CalculationBroker {
 
     private ExecutorService initializeThreadPoolWithRejection() {
         final RejectedExecutionHandler handler = new ThreadPoolExecutor.AbortPolicy();
+        final BlockingQueue<Runnable> queue = new StackBlockingQueue<>(SUBMITTED_TASKS_QUEUE_SIZE);
 
         return new ThreadPoolExecutor(WORKERS_NUMBER, WORKERS_NUMBER,
                 0L, TimeUnit.MINUTES,
-                new LinkedBlockingQueue<>(SUBMITTED_TASKS_QUEUE_SIZE),
+                queue,
                 handler);
     }
 }
