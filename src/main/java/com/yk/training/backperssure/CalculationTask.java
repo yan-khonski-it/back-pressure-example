@@ -1,11 +1,16 @@
 package com.yk.training.backperssure;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Random;
 
 /**
  * Simulates a task calculation that takes some time.
  */
 public class CalculationTask {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CalculationTask.class);
 
     private static final Random RANDOM = new Random();
     private static final int MAX_WAIT_TIME_MS = 3000;
@@ -26,7 +31,7 @@ public class CalculationTask {
         final long end = System.currentTimeMillis();
         final long total = end - start;
         final CalculationResult calculationResult = new CalculationResult(name, text, result, total);
-        System.out.println("Calculation finished: " + calculationResult);
+        LOGGER.info("Calculation finished: {}", calculationResult);
         return calculationResult;
     }
 

@@ -1,5 +1,8 @@
 package com.yk.training.backperssure;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,9 +14,11 @@ import java.util.concurrent.Executors;
  */
 public class CalculationBroker {
 
-    private static final int MAX_WORKERS_NUMBER = 5;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CalculationBroker.class);
 
-    private final ExecutorService executorService = Executors.newFixedThreadPool(MAX_WORKERS_NUMBER);
+    private static final int WORKERS_NUMBER = 5;
+
+    private final ExecutorService executorService = Executors.newFixedThreadPool(WORKERS_NUMBER);
     private final Map<String, CalculationResult> calculationCache = new ConcurrentHashMap<>();
 
     public CompletableFuture<CalculationResult> submit(final CalculationTask calculationTask) {
@@ -22,7 +27,7 @@ public class CalculationBroker {
             return CompletableFuture.completedFuture(calculationResultCached);
         }
 
-        System.out.println("Calculation submitted: " + calculationTask.getName());
+        LOGGER.info("Calculation submitted: {}.", calculationTask.getName());
 
         final CompletableFuture<CalculationResult> calculated = CompletableFuture
                 .supplyAsync(calculationTask::calculate, executorService);
