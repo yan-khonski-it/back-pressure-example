@@ -1,5 +1,8 @@
 package com.yk.training.backperssure;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -7,6 +10,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     private static final AtomicInteger finishedTasks = new AtomicInteger();
     private static final AtomicInteger failedTasks = new AtomicInteger();
@@ -23,15 +28,22 @@ public class Main {
             if (i == 30) {
                 sleep(3000);
             }
+
+            if (i % 3 == 0) {
+                final CalculationTask calculationTaskCopy = createCalculationTask(i);
+                final CompletableFuture<CalculationResult> calculationResultCompletableFutureCopy =
+                        calculationBroker.submit(calculationTaskCopy);
+                completableFutures.add(calculationResultCompletableFutureCopy);
+            }
         }
 
         calculationBroker.close();
         sleep();
         completableFutures.forEach(Main::completeFuture);
-        System.out.println("Total tasks submitted: " + completableFutures.size());
+        LOGGER.info("Total tasks submitted: {}", completableFutures.size());
 
-        System.out.println("Total tasks finished: " + finishedTasks.get());
-        System.out.println("Failed tasks: " + failedTasks.get());
+        LOGGER.info("Total tasks finished: {}.", finishedTasks.get());
+        LOGGER.info("Failed tasks: {}.", failedTasks.get());
     }
 
     private static CalculationTask createCalculationTask(final int counter) {
@@ -54,12 +66,12 @@ public class Main {
         final CalculationResult calculationResult;
         try {
             calculationResult = future.get();
-            System.out.println("Task is finished: " + calculationResult);
+            LOGGER.info("Task is finished: {}.", calculationResult);
             finishedTasks.incrementAndGet();
         } catch (InterruptedException e) {
-            System.out.println("Task was interrupted. " + e.getMessage());
+            LOGGER.error("Task was interrupted: {}.", e.getMessage());
         } catch (ExecutionException e) {
-            System.out.println("Task failed.");
+            LOGGER.error("Task failed.");
             failedTasks.incrementAndGet();
         }
     }

@@ -25,11 +25,20 @@ public class CalculationBroker {
 
     private final ExecutorService executorService = initializeThreadPoolWithRejection();
     private final Map<String, CalculationResult> calculationCache = new ConcurrentHashMap<>();
+    private final Map<String, CompletableFuture<CalculationResult>> submittedTasksCache = new ConcurrentHashMap<>();
 
     public CompletableFuture<CalculationResult> submit(final CalculationTask calculationTask) {
         final CalculationResult calculationResultCached = calculationCache.get(calculationTask.getName());
+        // Check already calculated results.
         if (calculationResultCached != null) {
             return CompletableFuture.completedFuture(calculationResultCached);
+        }
+
+        // Check the cache of submitted tasks to prevent same task from being submitted again.
+        final CompletableFuture<CalculationResult> calculationResult = submittedTasksCache.get(calculationTask.getName());
+        if (calculationResult != null) {
+            LOGGER.info("Rejecting a task {} because it was already submitted.", calculationTask.getName());
+            return calculationResult;
         }
 
         LOGGER.info("Calculation submitted: {}.", calculationTask.getName());
@@ -37,15 +46,22 @@ public class CalculationBroker {
         try {
             final CompletableFuture<CalculationResult> calculated = CompletableFuture
                     .supplyAsync(calculationTask::calculate, executorService);
-            calculated.thenAccept(this::updateCache);
+            calculated.thenAccept(this::updateCalculatedResultsCache);
+            calculated.thenAccept(this::updateSubmittedTasksCache);
+
+            submittedTasksCache.put(calculationTask.getName(), calculated);
             return calculated;
         } catch (Exception e) {
-            System.out.println("Failed to submit a task.");
+            LOGGER.warn("Failed to submit a task: {}.", calculationTask.getName());
             return CompletableFuture.failedFuture(e);
         }
     }
 
-    private void updateCache(final CalculationResult calculationResult) {
+    private void updateSubmittedTasksCache(final CalculationResult calculationResult) {
+        submittedTasksCache.remove(calculationResult.getTaskName());
+    }
+
+    private void updateCalculatedResultsCache(final CalculationResult calculationResult) {
         calculationCache.put(calculationResult.getTaskName(), calculationResult);
     }
 
